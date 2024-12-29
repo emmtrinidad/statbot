@@ -69,33 +69,46 @@ async def test(interaction: discord.Interaction):
 
 # add stat to user - decide later: is it better to ONLY have stats as numbers or could they also use text stats?
 # for all "direct" stat commands, require admin permission
-@bot.tree.command(name="add-stat", description="add a stat to a certain or specific users")
-@app_commands.describe(member="person you want to add the desired stat to")
+@bot.tree.command(name="add-stat", description="add a stat to a certain or specific users.  needs admin privilege to do so.")
+@app_commands.describe(member="person (or multiple people, COMMA SEPARATED) you want to add the stat to - type 'all' if you want to add this stat to all users")
 @app_commands.describe(name="name of the stat")
-@app_commands.describe(name="e.g. 'missed three-pointers'")
+@app_commands.describe(member="the member you want to add this stat to")
+@app_commands.describe(type="how are you defining this stat?")
 @app_commands.choices(type =[
-    app_commands.Choice(name="blah", value="blah"),
-    app_commands.Choice(name="doubleblah", value="heh")
+    app_commands.Choice(name="numeric", value="numeric"),
+    app_commands.Choice(name="worded", value="worded"),
+    app_commands.Choice(name="decimal", value="decimal")
 ])
-async def addStat(interaction: discord.Interaction, name: str, member: discord.Member, type: app_commands.Choice[str]):
+async def addStat(interaction: discord.Interaction, name: str, member: str, type: app_commands.Choice[str]):
     pass
 
-#remove stat
+#remove stat from a user, specific users, or all users
 @bot.tree.command(name="remove-stat")
-async def removeStat(interaction: discord.Interaction):
+@app_commands.describe(name="name of the stat")
+async def removeStat(interaction: discord.Interaction, name: str, users: discord.Member = None):
     pass
 
 # allow to create polls for members to decide whether or not stat should be altered
 # maybe make it so that it's in a designated channel?
 # define functions for different kinds of stats
 @bot.tree.command(name="start-poll")
-async def startPoll(interaction: discord.Interaction):
+@app_commands.describe(title="poll title")
+@app_commands.describe(users="user")
+@app_commands.describe(stat="stat to be proposed to modify")
+@app_commands.describe(daystoend="how many days until the poll ends?")
+@app_commands.describe(hourstoend="how many hours on top of (or without) those days until the poll ends?")
+@app_commands.rename(daystoend="days-to-poll-end")
+@app_commands.rename(hourstoend="hours-to-poll-end")
+async def startPoll(interaction: discord.Interaction, title: str, users: discord.Member, stat: str, daystoend: int = None, hourstoend: int = None):
     pass
 
 
 #allow for user stat to be changed without poll - will require admin permission
 @bot.tree.command(name="modify-stat")
-async def modifyStat(interaction: discord.Interaction):
+@app_commands.describe(user="user to modify")
+@app_commands.describe(stat="stat to modify") #keep like this for now - try to see if there's a way to instead get stats after getting user
+@app_commands.describe(newval="new value to modify") # parse string into int if value is int, same thing with decimal
+async def modifyStat(interaction: discord.Interaction, user: discord.Member, stat: str, newval: str):
     pass
 
 
