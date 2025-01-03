@@ -20,6 +20,16 @@ def disconnect_db():
     client.close()
     print("successfully disconnected")
 
+def add_perms(serverId):
+    global client
+    db = client["Cluster0"]
+
+    server = db[str(serverId)]
+    perms = [{"modify-values": "admin"}, {"add-values": "admin"}, {"start-polls": "admin"}]
+
+    x = server.insert_many(perms)
+    return x.inserted_ids
+
 def add_user(serverId, users):
     """
     adds a single user or a list of users to the assigned server in MongoDB.

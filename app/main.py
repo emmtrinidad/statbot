@@ -42,8 +42,9 @@ async def on_guild_join(guild):
 
     for channel in guild.channels:
         if (channel.name == "statbot-polls"):
-            # add poll channel as document in db for later reference
+            # add poll channel as document in db for later reference, add permissions
             db.add_poll_channel(guild.id, channel.id)
+            db.add_perms(guild.id)
             await channel.send("All set up! This channel will be used to host polls to alter stats.")
 
 # on guild leave, erase collection to asve space
@@ -96,6 +97,21 @@ async def test(interaction: discord.Interaction):
 async def addStat(interaction: discord.Interaction, name: str, member: str, type: app_commands.Choice[str]):
     pass
 
+@bot.tree.command(name="edit-perms", description="edit permissions to modify stats")
+@app_commands.choices(permission =[
+    app_commands.Choice(name="owner", value="owner"),
+    app_commands.Choice(name="admin", value="admin"),
+    app_commands.Choice(name="all", value="all")
+])
+@app_commands.choices(users =[
+    app_commands.Choice(name="modify-values", value = "modify-values"),
+    app_commands.Choice(name="add-values", value="add-values"),
+    app_commands.Choice(name="start-polls", value="start-polls"),
+    app_commands.Choice(name="all-perms", value="all-perms")
+])
+async def editPerms(interaction: discord.Interaction, permission: app_commands.Choice[str], users: app_commands.Choice[str]):
+    pass
+
 #remove stat from a user, specific users, or all users
 @bot.tree.command(name="remove-stat")
 @app_commands.describe(name="name of the stat")
@@ -132,7 +148,8 @@ async def shutdown(interaction: discord.Interaction):
 
     # disconnect
     if interaction.user.id == 204427877955928064:
-        await db.disconnect_db()
+        db.disconnect_db()
+        await interaction.response.send_message("successful shutdown")
 
     else:
         await interaction.response.send_message("not authorized")
