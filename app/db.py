@@ -26,10 +26,10 @@ def add_perms(serverId):
 
     server = db[str(serverId)]
     # adding default permissions
-    perms = [{"modify-values": "admin"}, {"add-values": "admin"}, {"start-polls": "admin"}]
+    perms = {"modify-values": "admin", "add-values": "admin", "start-polls": "admin"}
 
-    x = server.insert_many(perms)
-    return x.inserted_ids
+    x = server.insert_one(perms)
+    return x.inserted_id
 
 def edit_perms(serverId, permission, scope):
     global client
@@ -40,16 +40,14 @@ def edit_perms(serverId, permission, scope):
     # there is only one of each permission created per server
     # case of all params
     if permission == "all-perms":
-        query = {"or": [
+        query = {"$or": [
             {"modify-values": {"$exists": True}}, 
             {"add-values": {"$exists": True}},
             {"start-polls": {"$exists": True}}
             ]
         }
         update = {
-            "$set" :{
-                field: scope for field in ["modify-values", "add-values", "start-polls"]
-            }
+            "$set": {field: scope for field in ["modify-values", "add-values", "start-polls"]}
         }
 
     # case of single param
@@ -57,6 +55,8 @@ def edit_perms(serverId, permission, scope):
         query = {permission: {"$exists": True}}
         update = {"$set": {permission: scope}}
 
+    print(query)
+    print(update)
     server.update_many(query, update)
     print("updated")
 
@@ -104,7 +104,7 @@ def add_poll_channel(serverId, channelId):
     db = client["Cluster0"]
     server = db[str(serverId)]
 
-    # create a new document with "pollChannelId" name
+    # create a new document with "pollChannelId" name - will only be using a poll channel
     poll = {"poll_channel": channelId}
 
     x = server.insert_one(poll)
