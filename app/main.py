@@ -45,7 +45,7 @@ async def on_guild_join(guild):
             # add poll channel as document in db for later reference, add permissions
             db.add_poll_channel(guild.id, channel.id)
             db.add_perms(guild.id)
-            await channel.send("All set up! This channel will be used to host polls to alter stats.")
+            await channel.send("All set up! This channel will be used to host polls to alter stats. Currently, only admins have access to all stat-modifying commands. If you want to edit stats, consider using `/edit-perms`")
 
 # on guild leave, erase collection to asve space
 @bot.event
@@ -98,19 +98,22 @@ async def addStat(interaction: discord.Interaction, name: str, member: str, type
     pass
 
 @bot.tree.command(name="edit-perms", description="edit permissions to modify stats")
-@app_commands.choices(permission =[
+@app_commands.choices(users =[
     app_commands.Choice(name="owner", value="owner"),
     app_commands.Choice(name="admin", value="admin"),
     app_commands.Choice(name="all", value="all")
 ])
-@app_commands.choices(users =[
+@app_commands.choices(permission =[
     app_commands.Choice(name="modify-values", value = "modify-values"),
     app_commands.Choice(name="add-values", value="add-values"),
     app_commands.Choice(name="start-polls", value="start-polls"),
     app_commands.Choice(name="all-perms", value="all-perms")
 ])
 async def editPerms(interaction: discord.Interaction, permission: app_commands.Choice[str], users: app_commands.Choice[str]):
-    pass
+    #TODO: show permissions after editing, and create a function that shows current permissions
+    # also todo: make it so that guild owner only has permissions to do this
+    db.edit_perms(interaction.guild_id, permission.value, users.value)
+    await interaction.response.send_message("permissions updated!")
 
 #remove stat from a user, specific users, or all users
 @bot.tree.command(name="remove-stat")

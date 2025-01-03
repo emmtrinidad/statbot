@@ -25,10 +25,40 @@ def add_perms(serverId):
     db = client["Cluster0"]
 
     server = db[str(serverId)]
+    # adding default permissions
     perms = [{"modify-values": "admin"}, {"add-values": "admin"}, {"start-polls": "admin"}]
 
     x = server.insert_many(perms)
     return x.inserted_ids
+
+def edit_perms(serverId, permission, scope):
+    global client
+    db = client["Cluster0"]
+
+    server = db[str(serverId)]
+
+    # there is only one of each permission created per server
+    # case of all params
+    if permission == "all-perms":
+        query = {"or": [
+            {"modify-values": {"$exists": True}}, 
+            {"add-values": {"$exists": True}},
+            {"start-polls": {"$exists": True}}
+            ]
+        }
+        update = {
+            "$set" :{
+                field: scope for field in ["modify-values", "add-values", "start-polls"]
+            }
+        }
+
+    # case of single param
+    else:
+        query = {permission: {"$exists": True}}
+        update = {"$set": {permission: scope}}
+
+    server.update_many(query, update)
+    print("updated")
 
 def add_user(serverId, users):
     """
