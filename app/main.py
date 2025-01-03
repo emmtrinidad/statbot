@@ -19,26 +19,37 @@ async def on_ready():
     try:
         synced = await bot.tree.sync()
         print(f"Synced {len(synced)} commands")
-        #db.startup_db()
+        db.startup_db()
     except Exception as e:
         print(e)
 
 @bot.event
 async def on_message(message):
-    print(message)
+    pass
 
 # on guild join, create collection and get all users in the server to put as documents
 # also get server owner to be given admin permissions
 @bot.event
 async def on_guild_join(guild):
-    # mongo adds to collections that don't exist
-    print(guild)
-    # create channel for polls
+
+    newMembers = db.add_user(guild.id, guild.members)
+    for mem in newMembers:
+        print(str(mem) + " has been added to the database")
+
+    # create channel for polls if doesn't exist
+    if not any(channel.name == "statbot-polls" for channel in guild.channels):
+        await guild.create_text_channel("statbot-polls")
+
+    for channel in guild.channels:
+        if (channel.name == "statbot-polls"):
+            # add poll channel as document in db for later reference
+            db.add_poll_channel(guild.id, channel.id)
+            await channel.send("All set up! This channel will be used to host polls to alter stats.")
 
 # on guild leave, erase collection to asve space
 @bot.event
 async def on_guild_remove(guild):
-    print(guild)
+    db.delete_after_kick(guild.id)
 
 
 # on member join, add user to collection
@@ -122,6 +133,9 @@ async def shutdown(interaction: discord.Interaction):
     # disconnect
     if interaction.user.id == 204427877955928064:
         await db.disconnect_db()
+
+    else:
+        await interaction.response.send_message("not authorized")
 
     pass
 
