@@ -19,7 +19,7 @@ async def on_ready():
     try:
         synced = await bot.tree.sync()
         print(f"Synced {len(synced)} commands")
-        db.startup_db()
+        #db.startup_db()
     except Exception as e:
         print(e)
 
@@ -67,6 +67,7 @@ async def on_reaction_remove(reaction, user):
 
 @bot.tree.command(name="test")
 async def test(interaction: discord.Interaction):
+    print(interaction.user.id)
     await interaction.response.send_message("a command goes here")
 
 # add stat to user - decide later: is it better to ONLY have stats as numbers or could they also use text stats?
@@ -113,19 +114,15 @@ async def startPoll(interaction: discord.Interaction, title: str, users: discord
 async def modifyStat(interaction: discord.Interaction, user: discord.Member, stat: str, newval: str):
     pass
 
-
-def is_user(ctx):
-    return not ctx.author.id == 204427877955928064
-
 # command used for shutting down bot's connection to mongo until i find a better way
 @bot.tree.command(name="shutdown")
-@is_user
 async def shutdown(interaction: discord.Interaction):
     # check if current user is dev
 
     # disconnect
-    db.disconnect_db()
-    await interaction.response.send_message("db successfully disconnected")
+    if interaction.user.id == 204427877955928064:
+        await db.disconnect_db()
+
+    pass
 
 bot.run(DISCORD_TOKEN)
-

@@ -19,3 +19,4 @@ def disconnect_db():
     global client
     client.close()
     print("successfully disconnected")
+
