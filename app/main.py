@@ -3,6 +3,7 @@ from discord import app_commands
 from discord.ext import commands
 from dotenv import load_dotenv
 import os
+import db
 
 load_dotenv()
 
@@ -18,6 +19,7 @@ async def on_ready():
     try:
         synced = await bot.tree.sync()
         print(f"Synced {len(synced)} commands")
+        db.startup_db()
     except Exception as e:
         print(e)
 
@@ -112,11 +114,18 @@ async def modifyStat(interaction: discord.Interaction, user: discord.Member, sta
     pass
 
 
+def is_user(ctx):
+    return not ctx.author.id == 204427877955928064
+
 # command used for shutting down bot's connection to mongo until i find a better way
 @bot.tree.command(name="shutdown")
-async def shutdown(intereaction: discord.Interaction):
+@is_user
+async def shutdown(interaction: discord.Interaction):
     # check if current user is dev
-    pass
+
+    # disconnect
+    db.disconnect_db()
+    await interaction.response.send_message("db successfully disconnected")
 
 bot.run(DISCORD_TOKEN)
 
