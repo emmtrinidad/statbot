@@ -19,15 +19,17 @@ def disconnect_db():
     global client
     client.close()
     print("successfully disconnected")
-
+    
+# done on startup to add server and its permissions
 def add_perms(serverId):
     global client
     db = client["Cluster0"]
 
-    server = db[str(serverId)]
+    server = db["servers"]
     # adding default permissions
-    perms = {"modify-values": "admin", "add-values": "admin", "start-polls": "admin"}
+    perms = {"server-id": str(serverId), "settings": {"modify-values": "admin", "add-values": "admin", "start-polls": "admin"}}
 
+    # add new server instance
     x = server.insert_one(perms)
     return x.inserted_id
 
@@ -35,34 +37,22 @@ def edit_perms(serverId, permission, scope):
     global client
     db = client["Cluster0"]
 
-    server = db[str(serverId)]
+    server = db["servers"]
 
     # there is only one of each permission created per server
-    # case of all params
+    # case of all params - all parameters are already initialized so can be set like this
     if permission == "all-perms":
-        query = {"$or": [
-            {"modify-values": {"$exists": True}}, 
-            {"add-values": {"$exists": True}},
-            {"start-polls": {"$exists": True}}
-            ]
-        }
-        update = {
-            "$set": {field: scope for field in ["modify-values", "add-values", "start-polls"]}
-        }
+        update = { "$set": {"settings." + field: scope for field in ["modify-values", "add-values", "start-polls"]}}
 
     # case of single param
     else:
-        query = {permission: {"$exists": True}}
-        update = {"$set": {permission: scope}}
+        update = {"$set": {"settings." + permission: scope}}
 
-    print(query)
-    print(update)
-    server.update_many(query, update)
-    print("updated")
+    server.update_one({"server-id":str(serverId)}, update)
 
 def add_user(serverId, users):
     """
-    adds a single user or a list of users to the assigned server in MongoDB.
+    adds list of users to the assigned server in MongoDB.
 
     Args:
         server_id (str): The ID of the server.
@@ -75,26 +65,26 @@ def add_user(serverId, users):
     global client
     db = client["Cluster0"]
 
-    server = db[str(serverId)]
+    server = db["servers"]
 
     # if single user, convert to single instance
     if isinstance(users, int):
         users = [users]
 
-    # format all users for insertion, except for the bot
-    new_users = [{"userId": user.id} for user in users if user.id != 1307154758397726830]
+    # format all users for list update, except for the bot into an array
+    new_users = [user.id for user in users if user.id != 1307154758397726830]
 
-    x = server.insert_many(new_users)
-    return x.inserted_ids
+    x = server.update_one({"server-id": str(serverId)}, {"$push": {"users": {"$each": new_users}}})
+    return x.upserted_id
 
 def delete_after_kick(serverId):
     global client
     db = client["Cluster0"]
 
-    # drop server collection from db
-    server = db[str(serverId)]
-    server.drop()
-    print("kicked from server, deleted collection " + str(serverId))
+    # drop server from db
+    server = db["servers"]
+    server.delete_one({"server-id": str(serverId)})
+    print("kicked from server, deleted document " + str(serverId))
 
 
 def add_poll_channel(serverId, channelId):
@@ -102,10 +92,8 @@ def add_poll_channel(serverId, channelId):
     global client
 
     db = client["Cluster0"]
-    server = db[str(serverId)]
+    server = db["servers"]
 
     # create a new document with "pollChannelId" name - will only be using a poll channel
-    poll = {"poll_channel": channelId}
-
-    x = server.insert_one(poll)
-    return x.inserted_id
+    x = server.update_one({"server-id": str(serverId)}, {"$set": {"settings.poll_channel_id": str(channelId)}})
+    return x.upserted_id

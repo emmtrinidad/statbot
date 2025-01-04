@@ -32,10 +32,6 @@ async def on_message(message):
 @bot.event
 async def on_guild_join(guild):
 
-    newMembers = db.add_user(guild.id, guild.members)
-    for mem in newMembers:
-        print(str(mem) + " has been added to the database")
-
     # create channel for polls if doesn't exist
     if not any(channel.name == "statbot-polls" for channel in guild.channels):
         await guild.create_text_channel("statbot-polls")
@@ -45,7 +41,11 @@ async def on_guild_join(guild):
             # add poll channel as document in db for later reference, add permissions
             db.add_poll_channel(guild.id, channel.id)
             db.add_perms(guild.id)
-            await channel.send("All set up! This channel will be used to host polls to alter stats. Currently, only admins have access to all stat-modifying commands. If you want to edit stats, consider using `/edit-perms`")
+
+    db.add_user(guild.id, guild.members)
+
+    await channel.send("All set up! This channel will be used to host polls to alter stats. Currently, only admins have access to all stat-modifying commands. If you want to edit stats, consider using `/edit-perms`")
+
 
 # on guild leave, erase collection to asve space
 @bot.event
