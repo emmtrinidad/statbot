@@ -1,4 +1,4 @@
-from pymongo import MongoClient
+from pymongo import MongoClient, UpdateOne
 from dotenv import load_dotenv
 import os
 
@@ -84,10 +84,43 @@ def add_user(serverId, users):
         users = [users]
 
     # format all users for list update, except for the bot into an array
-    new_users = [user.id for user in users if user.id != 1307154758397726830]
+    # user ids are formatted to string due to stat modifying arguments taking multiple users as string ids
+    new_users = [{"user_id": str(user.id), "stats": {}} for user in users if user.id != 1307154758397726830]
 
     x = server.update_one({"server-id": str(serverId)}, {"$push": {"users": {"$each": new_users}}})
     return x.upserted_id
+
+def add_stat(serverId, statName, statValue, users):
+    global client
+    db = client["Cluster0"]
+    server = db["servers"]
+
+    # if single user, convert to single instance
+    if isinstance(users, int):
+        users = [users]
+
+    operations = []
+
+    for user in users:
+        operation = UpdateOne(
+            {"server-id": str(serverId), "users.user_id": user},
+            {"$set": {f"users.$.stats.{statName}": statValue}},
+        )
+        operations.append(operation)
+
+    print(operations)
+    x = server.bulk_write(operations)
+    print(x)
+    
+
+def remove_user(serverId, user):
+    global client
+    db = client["Cluster0"]
+    server = db["servers"]
+
+    #delete instance of user from database
+    server.update_one({"server-id": str(serverId)}, {"$unset": {user.id: ""}})
+
 
 def delete_after_kick(serverId):
     global client

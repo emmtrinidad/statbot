@@ -4,6 +4,7 @@ from discord.ext import commands
 from dotenv import load_dotenv
 import os
 import db
+import re
 
 load_dotenv()
 
@@ -62,7 +63,9 @@ async def on_member_join(member: discord.Member):
 # on member leave, remove user document
 @bot.event
 async def on_member_leave(member):
-    pass
+    db.remove_user(member.guild.id, member)
+    print("member left, removing")
+
 
 # on poll end, check if in designated channel - need to create own polls for this
 # create custom listener for this
@@ -79,48 +82,42 @@ async def on_reaction_remove(reaction, user):
 
 # checking if user is authorized to use a certain command
 async def check_authorized(interaction: discord.Interaction, permission):
-        authorized = db.get_perm(interaction.guild_id, permission)
-        
-        if authorized == "owner":
-            return interaction.user.id == interaction.guild.owner_id
+    authorized = db.get_perm(interaction.guild_id, permission)
+    
+    if authorized == "owner":
+        return interaction.user.id == interaction.guild.owner_id
 
-        elif authorized == "admin":
-            return interaction.channel.permissions_for(interaction.user).administrator
+    elif authorized == "admin":
+        return interaction.channel.permissions_for(interaction.user).administrator
 
-        else:
-            return True
+    else:
+        return True
             
-
-
 @bot.tree.command(name="test")
 async def test(interaction: discord.Interaction):
     blah = db.get_perm(interaction.guild_id, "add-values")
     print(blah)
     await interaction.response.send_message("a command goes here")
 
-# add stat to user - decide later: is it better to ONLY have stats as numbers or could they also use text stats?
-# for all "direct" stat commands, require admin permission
+# add stat to user - will all be set to string for simplicity
 @bot.tree.command(name="add-stat", description="add a stat to a certain or specific users.  needs admin privilege to do so.")
-@app_commands.describe(member="person (or multiple people, COMMA SEPARATED) you want to add the stat to - type 'all' if you want to add this stat to all users")
+@app_commands.describe(member="ping all users you want to add the stat to, or instead type 'all' for all users")
 @app_commands.describe(name="name of the stat")
 @app_commands.describe(member="the member you want to add this stat to")
-@app_commands.describe(type="how are you defining this stat?")
-@app_commands.choices(type =[
-    app_commands.Choice(name="numeric", value="numeric"),
-    app_commands.Choice(name="worded", value="worded"),
-    app_commands.Choice(name="decimal", value="decimal")
-])
-async def addStat(interaction: discord.Interaction, name: str, member: str, type: app_commands.Choice[str]):
+@app_commands.describe(value="what will you set the value of this stat to be?")
+async def addStat(interaction: discord.Interaction, name: str, member: str, value: str):
     
     if await check_authorized(interaction, "add-values"):
-        await interaction.response.send_message("dummy message")
+        user_ids = re.findall(r'<@(\d+)>', member)
+        db.add_stat(interaction.guild_id, name, value, user_ids)
+        await interaction.response.send_message("stats added!")
         
     else:
         await interaction.response.send_message("you are unauthorized to use this command! only " + db.get_perm(interaction.guild_id, "add-values") + " is allowed to use this.")
 
 def is_server_owner():
     async def predicate(interaction: discord.Interaction):
-        return interaction.user.id == interaction.guild.owner_id  # Your Discord user ID
+        return interaction.user.id == interaction.guild.owner_id  # guild owner id
     return discord.app_commands.check(predicate)
 
 
@@ -143,10 +140,19 @@ async def editPerms(interaction: discord.Interaction, permission: app_commands.C
     db.edit_perms(interaction.guild_id, permission.value, users.value)
     await interaction.response.send_message("permissions updated!")
 
-#remove stat from a user, specific users, or all users
+# remove stat from a user, specific users, or all users
+# same perms as add stat
 @bot.tree.command(name="remove-stat")
 @app_commands.describe(name="name of the stat")
 async def removeStat(interaction: discord.Interaction, name: str, users: discord.Member = None):
+
+    if await check_authorized(interaction, "add-values"):
+        print(interaction.message)
+        await interaction.response.send_message("dummy message")
+        
+    else:
+        await interaction.response.send_message("you are unauthorized to use this command! only " + db.get_perm(interaction.guild_id, "add-values") + " is allowed to use this.")
+
     pass
 
 # allow to create polls for members to decide whether or not stat should be altered
@@ -174,7 +180,7 @@ async def modifyStat(interaction: discord.Interaction, user: discord.Member, sta
 
 def is_dev():
     async def predicate(interaction: discord.Interaction):
-        return interaction.user.id == 204427877955928064  # Your Discord user ID
+        return interaction.user.id == 204427877955928064  # developer (me) id
     return discord.app_commands.check(predicate)
 
 
