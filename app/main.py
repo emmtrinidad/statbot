@@ -62,8 +62,8 @@ async def on_member_join(member: discord.Member):
 
 # on member leave, remove user document
 @bot.event
-async def on_member_leave(member):
-    db.remove_user(member.guild.id, member)
+async def on_member_remove(member):
+    db.remove_user(member.guild.id, str(member.id))
     print("member left, removing")
 
 

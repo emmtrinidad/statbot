@@ -119,7 +119,7 @@ def remove_user(serverId, user):
     server = db["servers"]
 
     #delete instance of user from database
-    server.update_one({"server-id": str(serverId)}, {"$unset": {user.id: ""}})
+    server.update_one({"server-id": str(serverId)}, {"$pull": {"users": {"user_id": user}}})
 
 
 def delete_after_kick(serverId):
