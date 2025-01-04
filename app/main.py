@@ -108,8 +108,16 @@ async def test(interaction: discord.Interaction):
 async def addStat(interaction: discord.Interaction, name: str, member: str, value: str):
     
     if await check_authorized(interaction, "add-values"):
-        user_ids = re.findall(r'<@(\d+)>', member)
-        db.add_stat(interaction.guild_id, name, value, user_ids)
+
+        if member == "all":
+            memberIds = [str(member.id) for member in interaction.guild.members if member.id != 1307154758397726830]
+            print(memberIds)
+            db.add_stat(interaction.guild_id, name, value, memberIds)
+    
+        else:
+            user_ids = re.findall(r'<@(\d+)>', member)
+            db.add_stat(interaction.guild_id, name, value, user_ids)
+    
         await interaction.response.send_message("stats added!")
         
     else:
