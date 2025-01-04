@@ -55,8 +55,9 @@ async def on_guild_remove(guild):
 
 # on member join, add user to collection
 @bot.event
-async def on_member_join(member):
-    print(member)
+async def on_member_join(member: discord.Member):
+    db.add_user(member.guild.id, [member])
+    print("new member joined, added to database")
 
 # on member leave, remove user document
 @bot.event
@@ -76,10 +77,25 @@ async def on_reaction_add(reaction, user):
 async def on_reaction_remove(reaction, user):
     pass
 
+# checking if user is authorized to use a certain command
+async def check_authorized(interaction: discord.Interaction, permission):
+        authorized = db.get_perm(interaction.guild_id, permission)
+        
+        if authorized == "owner":
+            return interaction.user.id == interaction.guild.owner_id
+
+        elif authorized == "admin":
+            return interaction.channel.permissions_for(interaction.user).administrator
+
+        else:
+            return True
+            
+
 
 @bot.tree.command(name="test")
 async def test(interaction: discord.Interaction):
-    print(interaction.user.id)
+    blah = db.get_perm(interaction.guild_id, "add-values")
+    print(blah)
     await interaction.response.send_message("a command goes here")
 
 # add stat to user - decide later: is it better to ONLY have stats as numbers or could they also use text stats?
@@ -95,7 +111,18 @@ async def test(interaction: discord.Interaction):
     app_commands.Choice(name="decimal", value="decimal")
 ])
 async def addStat(interaction: discord.Interaction, name: str, member: str, type: app_commands.Choice[str]):
-    pass
+    
+    if await check_authorized(interaction, "add-values"):
+        await interaction.response.send_message("dummy message")
+        
+    else:
+        await interaction.response.send_message("you are unauthorized to use this command! only " + db.get_perm(interaction.guild_id, "add-values") + " is allowed to use this.")
+
+def is_server_owner():
+    async def predicate(interaction: discord.Interaction):
+        return interaction.user.id == interaction.guild.owner_id  # Your Discord user ID
+    return discord.app_commands.check(predicate)
+
 
 @bot.tree.command(name="edit-perms", description="edit permissions to modify stats")
 @app_commands.choices(users =[
@@ -109,6 +136,7 @@ async def addStat(interaction: discord.Interaction, name: str, member: str, type
     app_commands.Choice(name="start-polls", value="start-polls"),
     app_commands.Choice(name="all-perms", value="all-perms")
 ])
+@is_server_owner()
 async def editPerms(interaction: discord.Interaction, permission: app_commands.Choice[str], users: app_commands.Choice[str]):
     #TODO: show permissions after editing, and create a function that shows current permissions
     # also todo: make it so that guild owner only has permissions to do this

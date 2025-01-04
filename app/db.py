@@ -50,6 +50,18 @@ def edit_perms(serverId, permission, scope):
 
     server.update_one({"server-id":str(serverId)}, update)
 
+# authentication for certain commands
+def get_perm(serverId, perm):
+    global client
+    db = client["Cluster0"]
+    server = db["servers"]
+
+    # all perms initialized, no worries about getting an error of not existing
+    result = server.find_one({"server-id": str(serverId)})
+
+    return result['settings'][perm]
+
+
 def add_user(serverId, users):
     """
     adds list of users to the assigned server in MongoDB.
