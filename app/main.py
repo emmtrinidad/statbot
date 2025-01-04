@@ -100,12 +100,12 @@ async def test(interaction: discord.Interaction):
     await interaction.response.send_message("a command goes here")
 
 # add stat to user - will all be set to string for simplicity
-@bot.tree.command(name="add-stat", description="add a stat to a certain or specific users.  needs admin privilege to do so.")
+@bot.tree.command(name="update-stat", description="add/update a stat to a certain or specific users.")
 @app_commands.describe(member="ping all users you want to add the stat to, or instead type 'all' for all users")
 @app_commands.describe(name="name of the stat")
 @app_commands.describe(member="the member you want to add this stat to")
 @app_commands.describe(value="what will you set the value of this stat to be?")
-async def addStat(interaction: discord.Interaction, name: str, member: str, value: str):
+async def updateStat(interaction: discord.Interaction, name: str, member: str, value: str):
     
     if await check_authorized(interaction, "add-values"):
 
@@ -136,17 +136,42 @@ def is_server_owner():
     app_commands.Choice(name="all", value="all")
 ])
 @app_commands.choices(permission =[
-    app_commands.Choice(name="modify-values", value = "modify-values"),
-    app_commands.Choice(name="add-values", value="add-values"),
+    app_commands.Choice(name="update-values", value="add-values"),
     app_commands.Choice(name="start-polls", value="start-polls"),
     app_commands.Choice(name="all-perms", value="all-perms")
 ])
 @is_server_owner()
 async def editPerms(interaction: discord.Interaction, permission: app_commands.Choice[str], users: app_commands.Choice[str]):
-    #TODO: show permissions after editing, and create a function that shows current permissions
-    # also todo: make it so that guild owner only has permissions to do this
+    #todo: make it so that guild owner only has permissions to do this
     db.edit_perms(interaction.guild_id, permission.value, users.value)
-    await interaction.response.send_message("permissions updated!")
+
+    modPerm = db.get_perm(interaction.guild_id, "add-values")
+    pollPerm = db.get_perm(interaction.guild_id, "start-polls")
+
+    await interaction.response.send_message("permissions updated!\n New permissions:\n Update values: " + modPerm + "\n Start/close polls: " + pollPerm)
+
+@bot.tree.command(name="get-current-perms", description="shows current permission levels for each stat-modifying command")
+async def getCurrentPerms(interaction: discord.Interaction):
+    modPerm = db.get_perm(interaction.guild_id, "add-values")
+    pollPerm = db.get_perm(interaction.guild_id, "start-polls")
+
+    await interaction.response.send_message("Current permissions:\n Update values: " + modPerm + "\n Start/close polls: " + pollPerm)
+
+@bot.tree.command(name="get-current-stats")
+async def getCurrentStats(interaction:discord.Interaction, users: str):
+    userIds = re.findall(r'<@(\d+)>', users)
+
+    output = ""
+
+    for id in userIds:
+        output = output + f"<@{id}>'s stats:\n "
+        userStats = []
+
+        for stat in userStats:
+            output = output + f" - **{stat.name}**: {stat.value}\n"
+
+    await interaction.response.send_message(output)
+
 
 # remove stat from a user, specific users, or all users
 # same perms as add stat
@@ -175,15 +200,6 @@ async def removeStat(interaction: discord.Interaction, name: str, users: discord
 @app_commands.rename(daystoend="days-to-poll-end")
 @app_commands.rename(hourstoend="hours-to-poll-end")
 async def startPoll(interaction: discord.Interaction, title: str, users: discord.Member, stat: str, daystoend: int = None, hourstoend: int = None):
-    pass
-
-
-#allow for user stat to be changed without poll - will require admin permission
-@bot.tree.command(name="modify-stat")
-@app_commands.describe(user="user to modify")
-@app_commands.describe(stat="stat to modify") #keep like this for now - try to see if there's a way to instead get stats after getting user
-@app_commands.describe(newval="new value to modify") # parse string into int if value is int, same thing with decimal
-async def modifyStat(interaction: discord.Interaction, user: discord.Member, stat: str, newval: str):
     pass
 
 def is_dev():

@@ -27,7 +27,7 @@ def add_perms(serverId):
 
     server = db["servers"]
     # adding default permissions
-    perms = {"server-id": str(serverId), "settings": {"modify-values": "admin", "add-values": "admin", "start-polls": "admin"}}
+    perms = {"server-id": str(serverId), "settings": {"add-values": "admin", "start-polls": "admin"}}
 
     # add new server instance
     x = server.insert_one(perms)
