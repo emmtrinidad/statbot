@@ -144,8 +144,15 @@ async def startPoll(interaction: discord.Interaction, title: str, users: discord
 async def modifyStat(interaction: discord.Interaction, user: discord.Member, stat: str, newval: str):
     pass
 
+def is_dev():
+    async def predicate(interaction: discord.Interaction):
+        return interaction.user.id == 204427877955928064  # Your Discord user ID
+    return discord.app_commands.check(predicate)
+
+
 # command used for shutting down bot's connection to mongo until i find a better way
 @bot.tree.command(name="shutdown")
+@is_dev()
 async def shutdown(interaction: discord.Interaction):
     # check if current user is dev
 
