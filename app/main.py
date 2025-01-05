@@ -5,6 +5,8 @@ from dotenv import load_dotenv
 import os
 import re
 
+from .db import init, permissions
+
 load_dotenv()
 
 APP_ID= os.getenv('APP_ID')
@@ -19,7 +21,7 @@ async def on_ready():
     try:
         synced = await bot.tree.sync()
         print(f"Synced {len(synced)} commands")
-        #init.startup_db()
+        init.startup_db()
     except Exception as e:
         print(e)
 
