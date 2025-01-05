@@ -3,8 +3,9 @@ from discord import app_commands
 from discord.ext import commands
 from dotenv import load_dotenv
 import os
-import db
 import re
+
+from db import init, permissions, stats
 
 load_dotenv()
 
@@ -20,7 +21,7 @@ async def on_ready():
     try:
         synced = await bot.tree.sync()
         print(f"Synced {len(synced)} commands")
-        db.startup_db()
+        init.startup_db()
     except Exception as e:
         print(e)
 
@@ -40,10 +41,10 @@ async def on_guild_join(guild):
     for channel in guild.channels:
         if (channel.name == "statbot-polls"):
             # add poll channel as document in db for later reference, add permissions
-            db.add_poll_channel(guild.id, channel.id)
-            db.add_perms(guild.id)
+            init.add_poll_channel(guild.id, channel.id)
+            permissions.add_perms(guild.id)
 
-    db.add_user(guild.id, guild.members)
+    init.add_user(guild.id, guild.members)
 
     await channel.send("All set up! This channel will be used to host polls to alter stats. Currently, only admins have access to all stat-modifying commands. If you want to edit stats, consider using `/edit-perms`")
 
@@ -51,19 +52,19 @@ async def on_guild_join(guild):
 # on guild leave, erase collection to asve space
 @bot.event
 async def on_guild_remove(guild):
-    db.delete_after_kick(guild.id)
+    init.delete_after_kick(guild.id)
 
 
 # on member join, add user to collection
 @bot.event
 async def on_member_join(member: discord.Member):
-    db.add_user(member.guild.id, [member])
+    init.add_user(member.guild.id, [member])
     print("new member joined, added to database")
 
 # on member leave, remove user document
 @bot.event
 async def on_member_remove(member):
-    db.remove_user(member.guild.id, str(member.id))
+    init.remove_user(member.guild.id, str(member.id))
     print("member left, removing")
 
 
@@ -82,7 +83,7 @@ async def on_reaction_remove(reaction, user):
 
 # checking if user is authorized to use a certain command
 async def check_authorized(interaction: discord.Interaction, permission):
-    authorized = db.get_perm(interaction.guild_id, permission)
+    authorized = permissions.get_perm(interaction.guild_id, permission)
     
     if authorized == "owner":
         return interaction.user.id == interaction.guild.owner_id
@@ -95,7 +96,7 @@ async def check_authorized(interaction: discord.Interaction, permission):
             
 @bot.tree.command(name="test")
 async def test(interaction: discord.Interaction):
-    blah = db.get_perm(interaction.guild_id, "add-values")
+    blah = permissions.get_perm(interaction.guild_id, "add-values")
     print(blah)
     await interaction.response.send_message("a command goes here")
 
@@ -103,16 +104,18 @@ def showStatsString(result):
     
     output = ""
     for user in result['users']:
-        output = output + f"<@{user['user_id']}>'s stats:\n "
+        output += f"<@{user['user_id']}>'s stats:\n "
 
         stats = user['stats'].items()
 
         if stats:
             for statName, statValue in stats:
-                output = output + f" - **{statName}**: {statValue}\n"
+                output += f" - **{statName}**: {statValue}\n"
 
         else:
             output += " - **No stats added yet, add some!**\n"
+        
+        output += "\n"
 
     return output
 
@@ -130,11 +133,11 @@ async def updateStat(interaction: discord.Interaction, name: str, member: str, v
         if member == "all":
             memberIds = [str(member.id) for member in interaction.guild.members if member.id != 1307154758397726830]
             print(memberIds)
-            db.add_stat(interaction.guild_id, name, value, memberIds)
+            stats.add_stat(interaction.guild_id, name, value, memberIds)
     
         else:
             user_ids = re.findall(r'<@(\d+)>', member)
-            db.add_stat(interaction.guild_id, name, value, user_ids)
+            stats.add_stat(interaction.guild_id, name, value, user_ids)
     
         await interaction.response.send_message("stats added!")
         
@@ -149,8 +152,8 @@ async def removeStat(interaction: discord.Interaction, name: str, users: str):
 
     if await check_authorized(interaction, "add-values"):
         userIds = re.findall(r'<@(?!1307154758397726830)(\d+)>', users)
-        db.add_stat(interaction.guild_id, name, "", userIds, removeFlag=True)
-        result = db.get_stats(interaction.guild_id, userIds)
+        stats.add_stat(interaction.guild_id, name, "", userIds, removeFlag=True)
+        result = stats.get_stats(interaction.guild_id, userIds)
 
         response = showStatsString(result)
 
@@ -181,24 +184,24 @@ def is_server_owner():
 @is_server_owner()
 async def editPerms(interaction: discord.Interaction, permission: app_commands.Choice[str], users: app_commands.Choice[str]):
     #todo: make it so that guild owner only has permissions to do this
-    db.edit_perms(interaction.guild_id, permission.value, users.value)
+    permissions.edit_perms(interaction.guild_id, permission.value, users.value)
 
-    modPerm = db.get_perm(interaction.guild_id, "add-values")
-    pollPerm = db.get_perm(interaction.guild_id, "start-polls")
+    modPerm = permissions.get_perm(interaction.guild_id, "add-values")
+    pollPerm = permissions.get_perm(interaction.guild_id, "start-polls")
 
     await interaction.response.send_message("permissions updated!\n New permissions:\n Update values: " + modPerm + "\n Start/close polls: " + pollPerm)
 
 @bot.tree.command(name="get-current-perms", description="shows current permission levels for each stat-modifying command")
 async def getCurrentPerms(interaction: discord.Interaction):
-    modPerm = db.get_perm(interaction.guild_id, "add-values")
-    pollPerm = db.get_perm(interaction.guild_id, "start-polls")
+    modPerm = permissions.get_perm(interaction.guild_id, "add-values")
+    pollPerm = permissions.get_perm(interaction.guild_id, "start-polls")
 
     await interaction.response.send_message("Current permissions:\n Update values: " + modPerm + "\n Start/close polls: " + pollPerm)
 
 @bot.tree.command(name="get-current-stats")
 async def getCurrentStats(interaction:discord.Interaction, users: str):
     userIds = re.findall(r'<@(?!1307154758397726830)(\d+)>', users)
-    result = db.get_stats(interaction.guild_id, userIds)
+    result = stats.get_stats(interaction.guild_id, userIds)
 
     output = showStatsString(result)
 
@@ -232,7 +235,7 @@ async def shutdown(interaction: discord.Interaction):
 
     # disconnect
     if interaction.user.id == 204427877955928064:
-        db.disconnect_db()
+        init.disconnect_db()
         await interaction.response.send_message("successful shutdown")
 
     else:

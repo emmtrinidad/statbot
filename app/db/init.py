@@ -20,47 +20,6 @@ def disconnect_db():
     client.close()
     print("successfully disconnected")
     
-# done on startup to add server and its permissions
-def add_perms(serverId):
-    global client
-    db = client["Cluster0"]
-
-    server = db["servers"]
-    # adding default permissions
-    perms = {"server-id": str(serverId), "settings": {"add-values": "admin", "start-polls": "admin"}}
-
-    # add new server instance
-    x = server.insert_one(perms)
-    return x.inserted_id
-
-def edit_perms(serverId, permission, scope):
-    global client
-    db = client["Cluster0"]
-
-    server = db["servers"]
-
-    # there is only one of each permission created per server
-    # case of all params - all parameters are already initialized so can be set like this
-    if permission == "all-perms":
-        update = { "$set": {"settings." + field: scope for field in ["modify-values", "add-values", "start-polls"]}}
-
-    # case of single param
-    else:
-        update = {"$set": {"settings." + permission: scope}}
-
-    server.update_one({"server-id":str(serverId)}, update)
-
-# authentication for certain commands
-def get_perm(serverId, perm):
-    global client
-    db = client["Cluster0"]
-    server = db["servers"]
-
-    # all perms initialized, no worries about getting an error of not existing
-    result = server.find_one({"server-id": str(serverId)})
-
-    return result['settings'][perm]
-
 
 def add_user(serverId, users):
     """
@@ -89,42 +48,6 @@ def add_user(serverId, users):
 
     x = server.update_one({"server-id": str(serverId)}, {"$push": {"users": {"$each": new_users}}})
     return x.upserted_id
-
-def add_stat(serverId, statName, statValue, users, removeFlag):
-    global client
-    db = client["Cluster0"]
-    server = db["servers"]
-
-    # if single user, convert to single instance
-    if isinstance(users, int):
-        users = [users]
-
-    operations = []
-    operator = "$set"
-
-    # change to unset for removing stat so i don't have to do the same thing again
-    if removeFlag: 
-        statValue = ""
-        operator = "$unset"
-
-
-    for user in users:
-        operation = UpdateOne(
-            {"server-id": str(serverId), "users.user_id": user},
-            {operator: {f"users.$.stats.{statName}": statValue}},
-        )
-        operations.append(operation)
-
-    server.bulk_write(operations)
-
-def get_stats(serverId, userIds):
-    global client
-    db = client["Cluster0"]
-    server = db["servers"]
-
-    result = server.aggregate([{"$match": {"server-id": str(serverId), "users.user_id": {"$in": userIds}}}, {"$project": {"_id": 0, "users": 1}}]).next()
-    print(result)
-    return result
 
 def remove_user(serverId, user):
     global client
