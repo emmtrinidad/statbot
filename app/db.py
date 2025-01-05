@@ -111,7 +111,14 @@ def add_stat(serverId, statName, statValue, users):
     print(operations)
     x = server.bulk_write(operations)
     print(x)
-    
+
+def get_stats(serverId, userIds):
+    global client
+    db = client["Cluster0"]
+    server = db["servers"]
+
+    result = server.find_one({"server-id": str(serverId), "users.user_id": {"$in": userIds}}, {"_id": 0, "users.$": 1})
+    return result
 
 def remove_user(serverId, user):
     global client

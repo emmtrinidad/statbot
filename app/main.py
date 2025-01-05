@@ -159,16 +159,22 @@ async def getCurrentPerms(interaction: discord.Interaction):
 
 @bot.tree.command(name="get-current-stats")
 async def getCurrentStats(interaction:discord.Interaction, users: str):
-    userIds = re.findall(r'<@(\d+)>', users)
+    userIds = re.findall(r'<@(?!1307154758397726830)(\d+)>', users)
+    result = db.get_stats(interaction.guild_id, userIds)
 
     output = ""
 
-    for id in userIds:
-        output = output + f"<@{id}>'s stats:\n "
-        userStats = []
+    for user in result['users']:
+        output = output + f"<@{user['user_id']}>'s stats:\n "
 
-        for stat in userStats:
-            output = output + f" - **{stat.name}**: {stat.value}\n"
+        stats = user['stats'].items()
+
+        if stats:
+            for statName, statValue in stats:
+                output = output + f" - **{statName}**: {statValue}\n"
+
+        else:
+            output += "**No stats added yet, add some!**\n"
 
     await interaction.response.send_message(output)
 
