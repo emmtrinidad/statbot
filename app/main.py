@@ -99,6 +99,24 @@ async def test(interaction: discord.Interaction):
     print(blah)
     await interaction.response.send_message("a command goes here")
 
+def showStatsString(result):
+    
+    output = ""
+    for user in result['users']:
+        output = output + f"<@{user['user_id']}>'s stats:\n "
+
+        stats = user['stats'].items()
+
+        if stats:
+            for statName, statValue in stats:
+                output = output + f" - **{statName}**: {statValue}\n"
+
+        else:
+            output += " - **No stats added yet, add some!**\n"
+
+    return output
+
+
 # add stat to user - will all be set to string for simplicity
 @bot.tree.command(name="update-stat", description="add/update a stat to a certain or specific users.")
 @app_commands.describe(member="ping all users you want to add the stat to, or instead type 'all' for all users")
@@ -123,11 +141,31 @@ async def updateStat(interaction: discord.Interaction, name: str, member: str, v
     else:
         await interaction.response.send_message("you are unauthorized to use this command! only " + db.get_perm(interaction.guild_id, "add-values") + " is allowed to use this.")
 
+# remove stat from a user, specific users, or all users
+# same perms as add stat
+@bot.tree.command(name="remove-stat")
+@app_commands.describe(name="name of the stat")
+async def removeStat(interaction: discord.Interaction, name: str, users: str):
+
+    if await check_authorized(interaction, "add-values"):
+        userIds = re.findall(r'<@(?!1307154758397726830)(\d+)>', users)
+        db.add_stat(interaction.guild_id, name, "", userIds, removeFlag=True)
+        result = db.get_stats(interaction.guild_id, userIds)
+
+        response = showStatsString(result)
+
+        response  = "stat removed from the following users!\ncurrent stats for the affected users: \n" + response
+
+        await interaction.response.send_message(response)
+        
+    else:
+        await interaction.response.send_message("you are unauthorized to use this command! only " + db.get_perm(interaction.guild_id, "add-values") + " is allowed to use this.")
+
+
 def is_server_owner():
     async def predicate(interaction: discord.Interaction):
         return interaction.user.id == interaction.guild.owner_id  # guild owner id
     return discord.app_commands.check(predicate)
-
 
 @bot.tree.command(name="edit-perms", description="edit permissions to modify stats")
 @app_commands.choices(users =[
@@ -162,37 +200,9 @@ async def getCurrentStats(interaction:discord.Interaction, users: str):
     userIds = re.findall(r'<@(?!1307154758397726830)(\d+)>', users)
     result = db.get_stats(interaction.guild_id, userIds)
 
-    output = ""
-
-    for user in result['users']:
-        output = output + f"<@{user['user_id']}>'s stats:\n "
-
-        stats = user['stats'].items()
-
-        if stats:
-            for statName, statValue in stats:
-                output = output + f" - **{statName}**: {statValue}\n"
-
-        else:
-            output += "**No stats added yet, add some!**\n"
+    output = showStatsString(result)
 
     await interaction.response.send_message(output)
-
-
-# remove stat from a user, specific users, or all users
-# same perms as add stat
-@bot.tree.command(name="remove-stat")
-@app_commands.describe(name="name of the stat")
-async def removeStat(interaction: discord.Interaction, name: str, users: discord.Member = None):
-
-    if await check_authorized(interaction, "add-values"):
-        print(interaction.message)
-        await interaction.response.send_message("dummy message")
-        
-    else:
-        await interaction.response.send_message("you are unauthorized to use this command! only " + db.get_perm(interaction.guild_id, "add-values") + " is allowed to use this.")
-
-    pass
 
 # allow to create polls for members to decide whether or not stat should be altered
 # maybe make it so that it's in a designated channel?

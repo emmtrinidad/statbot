@@ -90,7 +90,7 @@ def add_user(serverId, users):
     x = server.update_one({"server-id": str(serverId)}, {"$push": {"users": {"$each": new_users}}})
     return x.upserted_id
 
-def add_stat(serverId, statName, statValue, users):
+def add_stat(serverId, statName, statValue, users, removeFlag):
     global client
     db = client["Cluster0"]
     server = db["servers"]
@@ -100,24 +100,30 @@ def add_stat(serverId, statName, statValue, users):
         users = [users]
 
     operations = []
+    operator = "$set"
+
+    # change to unset for removing stat so i don't have to do the same thing again
+    if removeFlag: 
+        statValue = ""
+        operator = "$unset"
+
 
     for user in users:
         operation = UpdateOne(
             {"server-id": str(serverId), "users.user_id": user},
-            {"$set": {f"users.$.stats.{statName}": statValue}},
+            {operator: {f"users.$.stats.{statName}": statValue}},
         )
         operations.append(operation)
 
-    print(operations)
-    x = server.bulk_write(operations)
-    print(x)
+    server.bulk_write(operations)
 
 def get_stats(serverId, userIds):
     global client
     db = client["Cluster0"]
     server = db["servers"]
 
-    result = server.find_one({"server-id": str(serverId), "users.user_id": {"$in": userIds}}, {"_id": 0, "users.$": 1})
+    result = server.aggregate([{"$match": {"server-id": str(serverId), "users.user_id": {"$in": userIds}}}, {"$project": {"_id": 0, "users": 1}}]).next()
+    print(result)
     return result
 
 def remove_user(serverId, user):
