@@ -20,6 +20,11 @@ def disconnect_db():
     client.close()
     print("successfully disconnected")
 
+# fixes import problems
+def get_client():
+    global client
+    return client
+
 # done on startup to add server and its permissions
 def add_perms(serverId):
     global client
@@ -100,4 +105,4 @@ def get_poll_channel(serverId):
     db = client["Cluster0"]
     server = db["servers"]
 
-    return server.find_one({"server-id": str(serverId)}, {})
+    return server.find_one({"server-id": str(serverId)}, {"settings.poll-channel-id": 1})

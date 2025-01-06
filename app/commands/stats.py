@@ -3,6 +3,7 @@ from discord import app_commands
 import app.db.stats as stats
 import re
 import app.utils as utils
+import app.db.permissions as permissions
 
 def showStatsString(result):
     
@@ -65,7 +66,7 @@ async def removeStat(interaction: discord.Interaction, name: str, users: str):
         await interaction.response.send_message(response)
         
     else:
-        await interaction.response.send_message("you are unauthorized to use this command! only " + db.get_perm(interaction.guild_id, "add-values") + " is allowed to use this.")
+        await interaction.response.send_message("you are unauthorized to use this command! only " + permissions.get_perm(interaction.guild_id, "add-values") + " is allowed to use this.")
 
 @app_commands.command(name="get-current-stats")
 async def getCurrentStats(interaction:discord.Interaction, users: str):

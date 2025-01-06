@@ -3,9 +3,6 @@ from discord import app_commands
 from discord.ext import commands
 from dotenv import load_dotenv
 import os
-import re
-import asyncio
-
 from .db import init, permissions
 
 load_dotenv()
@@ -24,7 +21,7 @@ async def on_ready():
         print(f"Synced {len(synced)} commands")
         await bot.load_extension('app.cogs.PollChecker')
         print("works?")
-        #init.startup_db()
+        init.startup_db()
     except Exception as e:
         print(e)
 
@@ -51,20 +48,18 @@ async def on_guild_join(guild):
 
     await channel.send("All set up! This channel will be used to host polls to alter stats. Currently, only admins have access to all stat-modifying commands. If you want to edit stats, consider using `/edit-perms`")
 
-
-# on guild leave, erase collection to asve space
+# on guild leave, erase document to asve space
 @bot.event
 async def on_guild_remove(guild):
     init.delete_after_kick(guild.id)
 
-
-# on member join, add user to collection
+# on member join, add user to server document
 @bot.event
 async def on_member_join(member: discord.Member):
     init.add_user(member.guild.id, [member])
     print("new member joined, added to database")
 
-# on member leave, remove user document
+# on member leave, remove user from document
 @bot.event
 async def on_member_remove(member):
     init.remove_user(member.guild.id, str(member.id))
@@ -73,7 +68,6 @@ async def on_member_remove(member):
 
 # on poll end, check if in designated channel - need to create own polls for this
 # create custom listener for this
-
 # manage poll reaction for "yes"
 @bot.event
 async def on_reaction_add(reaction, user):
@@ -103,8 +97,6 @@ def load_commands():
             if hasattr(module, "__commands__"):
                 for cmd in module.__commands__:
                     bot.tree.add_command(cmd)
-
-
 
 load_commands()
 

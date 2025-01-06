@@ -1,8 +1,7 @@
-from .init import client
+from .init import get_client
 
 def edit_perms(serverId, permission, scope):
-    global client
-    db = client["Cluster0"]
+    db = get_client()["Cluster0"]
 
     server = db["servers"]
 
@@ -19,8 +18,7 @@ def edit_perms(serverId, permission, scope):
 
 # authentication for certain commands
 def get_perm(serverId, perm):
-    global client
-    db = client["Cluster0"]
+    db = get_client()["Cluster0"]
     server = db["servers"]
 
     # all perms initialized, no worries about getting an error of not existing
