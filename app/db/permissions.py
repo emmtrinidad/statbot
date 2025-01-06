@@ -1,18 +1,4 @@
-from pymongo import MongoClient
 from .init import client
-
-# done on startup to add server and its permissions
-def add_perms(serverId):
-    global client
-    db = client["Cluster0"]
-
-    server = db["servers"]
-    # adding default permissions
-    perms = {"server-id": str(serverId), "settings": {"add-values": "admin", "start-polls": "admin"}}
-
-    # add new server instance
-    x = server.insert_one(perms)
-    return x.inserted_id
 
 def edit_perms(serverId, permission, scope):
     global client

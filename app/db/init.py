@@ -19,6 +19,20 @@ def disconnect_db():
     global client
     client.close()
     print("successfully disconnected")
+
+# done on startup to add server and its permissions
+def add_perms(serverId):
+    global client
+    db = client["Cluster0"]
+
+    server = db["servers"]
+    # adding default permissions
+    perms = {"server-id": str(serverId), "settings": {"add-values": "admin", "start-polls": "admin"}}
+
+    # add new server instance
+    x = server.insert_one(perms)
+    return x.inserted_id
+
     
 
 def add_user(serverId, users):
@@ -78,3 +92,12 @@ def add_poll_channel(serverId, channelId):
     # create a new document with "pollChannelId" name - will only be using a poll channel
     x = server.update_one({"server-id": str(serverId)}, {"$set": {"settings.poll_channel_id": str(channelId)}})
     return x.upserted_id
+
+def get_poll_channel(serverId):
+    
+    global client
+
+    db = client["Cluster0"]
+    server = db["servers"]
+
+    return server.find_one({"server-id": str(serverId)}, {})

@@ -4,6 +4,7 @@ from discord.ext import commands
 from dotenv import load_dotenv
 import os
 import re
+import asyncio
 
 from .db import init, permissions
 
@@ -21,7 +22,9 @@ async def on_ready():
     try:
         synced = await bot.tree.sync()
         print(f"Synced {len(synced)} commands")
-        init.startup_db()
+        await bot.load_extension('app.cogs.PollChecker')
+        print("works?")
+        #init.startup_db()
     except Exception as e:
         print(e)
 
@@ -95,13 +98,11 @@ def load_commands():
                 continue
 
             module_name = f"{modulePrefix}.{file.stem}"
-            print(module_name)
             module = importlib.import_module(module_name)
 
             if hasattr(module, "__commands__"):
                 for cmd in module.__commands__:
                     bot.tree.add_command(cmd)
-                    print(cmd)
 
 
 
