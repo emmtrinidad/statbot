@@ -29,9 +29,9 @@ def add_stat(serverId, statName, statValue, users, removeFlag):
     server.bulk_write(operations)
 
 def get_stats(serverId, userIds):
+    print(userIds)
     db = get_client()["Cluster0"]
     server = db["servers"]
 
     result = server.aggregate([{"$match": {"server-id": str(serverId), "users.user_id": {"$in": userIds}}}, {"$project": {"_id": 0, "users": 1}}]).next()
-    print(result)
     return result

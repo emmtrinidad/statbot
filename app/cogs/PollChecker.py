@@ -64,8 +64,8 @@ class PollChecker(commands.Cog):
             output += utils.showStatsString(newStats)
 
             pollChannelId = init.get_poll_channel(serverId)['settings']['poll-channel-id']
-            print(pollChannelId)
-            channel = self.bot.get_channel(pollChannelId)
+            channel = await self.bot.fetch_channel(pollChannelId)
+            print(channel)
             await channel.send(output)
 
             del self.activePolls[serverId]
