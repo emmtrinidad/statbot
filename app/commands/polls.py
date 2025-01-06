@@ -6,7 +6,7 @@ import re
 import asyncio
 
 class Poll:
-    def __init__ (self, serverId, affectedMembers, affectedStat, newValue, description, expiry, removeFlag):
+    def __init__ (self, serverId, affectedMembers, affectedStat, newValue, description, expiry, removeFlag=None):
         self.serverId = serverId
         self.yesResponses = 0
         self.noResponses = 0
@@ -51,8 +51,12 @@ async def createPoll(interaction: discord.Interaction, affected_stat: str, new_s
     if poll_checker_cog:
         poll_checker_cog.addPoll(newPoll, interaction.guild_id)
         print("poll added")
+
+        await interaction.response.send_message("works")
     else:
-        print("PollChecker cog not found.")
+        print("something may have gone wrong")
+        await interaction.response.send_message("not works")
+
 
 
 __commands__ = [createPoll]

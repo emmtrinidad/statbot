@@ -15,18 +15,19 @@ class PollChecker(commands.Cog):
 
     @tasks.loop(seconds=5.0)
     async def checkPolls(self):
-        print("looping")
+        print(self.activePolls)
         expiredPolls = []
 
         # check every poll to see if expired
         for serverId, poll in self.activePolls.items():
             if poll.isDone():
                 print("poll expired")
-                expiredPolls.append(poll)
+                expiredPolls.append(serverId)
 
         #after, delete all expired polls
         for serverId in expiredPolls:
             del self.activePolls[serverId]
+            print("poll deleted")
 
 async def setup(bot):
     await bot.add_cog(PollChecker(bot))
