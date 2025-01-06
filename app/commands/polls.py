@@ -49,10 +49,14 @@ async def createPoll(interaction: discord.Interaction, affected_stat: str, new_s
     
     poll_checker_cog = interaction.client.get_cog('PollChecker')
     if poll_checker_cog:
-        poll_checker_cog.addPoll(newPoll, interaction.guild_id)
-        print("poll added")
+        check = poll_checker_cog.addPoll(newPoll, interaction.guild_id)
+        print(check)
 
-        await interaction.response.send_message("works")
+        if check:
+            await interaction.response.send_message("works")
+
+        else:
+            await interaction.response.send_message("a poll is already running")
     else:
         print("something may have gone wrong")
         await interaction.response.send_message("not works")

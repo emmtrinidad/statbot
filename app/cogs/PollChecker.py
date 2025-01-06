@@ -11,7 +11,13 @@ class PollChecker(commands.Cog):
         self.checkPolls.cancel()
 
     def addPoll(self, poll, serverId):
-        self.activePolls[str(serverId)] = poll
+
+        if str(serverId) not in self.activePolls:
+            self.activePolls[str(serverId)] = poll
+            return True
+
+        else:
+            return False
 
     @tasks.loop(seconds=5.0)
     async def checkPolls(self):
