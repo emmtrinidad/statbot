@@ -93,16 +93,14 @@ async def endCurrentPoll(interaction:discord.Interaction):
         poll_checker_cog = interaction.client.get_cog('PollChecker')
 
         if poll_checker_cog:
-            check = poll_checker_cog.cancelPoll(interaction.guild_id, True)
+            check = await poll_checker_cog.endPollEarly(interaction.guild_id)
 
-            if check == 1:
-                await interaction.response.send_message("poll passed")
-
-            elif check == 0:
-                await interaction.response.send_message("poll failed")
+            if not check:
+                await interaction.response.send_message("no poll currently exists right now!")
 
             else:
-                await interaction.response.send_message("there are currently no polls running")
+                await interaction.response.send_message("poll ended!")
+
 
         else:
             print("something may have gone wrong")

@@ -34,10 +34,35 @@ class PollChecker(commands.Cog):
             return True
         
         return False
+    
+    async def handlePollEnd(self, poll, serverId):
+        result = poll.endPoll()
+
+        if result == 1:
+
+            stats.add_stat(serverId, poll.affectedStat, poll.newValue, poll.affectedMembers, None)
+            newStats = stats.get_stats(serverId, poll.affectedMembers)
+
+            output = f"Poll passed {poll.yesResponses} - {poll.noResponses}!\n New stats of affected users:\n"
+
+            output += utils.showStatsString(newStats)
+
+        else:
+            output = f"Poll failed {poll.yesResponses} - {poll.noResponses}. No stats have been altered."
+
+        pollChannelId = init.get_poll_channel(serverId)['settings']['poll-channel-id']
+        channel = await self.bot.fetch_channel(pollChannelId)
+        print(channel)
+        await channel.send(output)
+
         
-    def endPollEarly(self, serverId):
+    async def endPollEarly(self, serverId):
         if str(serverId) in self.activePolls:
-            end = self.activePolls[str(serverId)].endPoll()
+            await self.handlePollEnd(self.activePolls[str(serverId)], str(serverId))
+            return True # signal poll exists and has been ended
+
+        else:
+            return False # signal no poll exists
 
 
 
@@ -55,19 +80,24 @@ class PollChecker(commands.Cog):
         #after, delete all expired polls
         for serverId in expiredPolls:
             finishedPoll = self.activePolls[serverId]
+            result = finishedPoll.endPoll()
 
-            stats.add_stat(serverId, finishedPoll.affectedStat, finishedPoll.newValue, finishedPoll.affectedMembers, None)
-            newStats = stats.get_stats(serverId, finishedPoll.affectedMembers)
+            if result == 1:
 
-            output = "Poll finished!\n New stats of affected users:\n"
+                stats.add_stat(serverId, finishedPoll.affectedStat, finishedPoll.newValue, finishedPoll.affectedMembers, None)
+                newStats = stats.get_stats(serverId, finishedPoll.affectedMembers)
 
-            output += utils.showStatsString(newStats)
+                output = f"Poll passed {finishedPoll.yesResponses} - {finishedPoll.noResponses}!\n New stats of affected users:\n"
+
+                output += utils.showStatsString(newStats)
+
+            else:
+                output = f"Poll failed {finishedPoll.yesResponses} - {finishedPoll.noResponses}. No stats have been altered."
 
             pollChannelId = init.get_poll_channel(serverId)['settings']['poll-channel-id']
             channel = await self.bot.fetch_channel(pollChannelId)
             print(channel)
             await channel.send(output)
-
             del self.activePolls[serverId]
             print("poll deleted")
 
