@@ -78,12 +78,15 @@ async def on_reaction_add(reaction, user):
 async def on_reaction_remove(reaction, user):
     pass
 
+# dynamically load all commands
 def load_commands():
     import importlib
     from pathlib import Path
 
+    # only get from db and commands folders - cog is already added upon initializing
     directories = [("db", "app.db"), ("commands", "app.commands")]
 
+    # check every file in db, commands folders for all .py files that aren't init, and add expored commands to command tree
     for folderName, modulePrefix in directories:
         dir = Path(__file__).parent / folderName
         for file in dir.glob("*.py"):

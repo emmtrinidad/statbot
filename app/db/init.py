@@ -4,7 +4,7 @@ import os
 
 load_dotenv()
 
-#keep this for now, try to find better way to deal with this later - is one client across multiple servers the best idea?
+#instantiate client
 client = None
 
 # starts up database, returns instance of client
@@ -20,7 +20,7 @@ def disconnect_db():
     client.close()
     print("successfully disconnected")
 
-# fixes import problems
+# allows for other modules to get client after connected to database
 def get_client():
     global client
     return client
