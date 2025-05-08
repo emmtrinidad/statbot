@@ -12,7 +12,7 @@ def startup_db():
     global client
     connectionString = os.getenv('CONNECTION_STRING')
     client = MongoClient(connectionString)
-    print('connected!')
+    print('connected!', flush=True)
 
 # disconnects client
 def disconnect_db():

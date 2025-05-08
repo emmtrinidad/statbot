@@ -15,12 +15,12 @@ bot = commands.Bot(command_prefix='$', intents= discord.Intents.all())
 
 @bot.event
 async def on_ready():
-    print("bot up")
+    print("bot up", flush=True)
     try:
         synced = await bot.tree.sync()
-        print(f"Synced {len(synced)} commands")
-        await bot.load_extension('app.cogs.PollChecker')
-        print("works?")
+        print(f"Synced {len(synced)} commands", flush=True)
+        await bot.load_extension('cogs.PollChecker')
+        print("works?", flush=True)
         init.startup_db()
     except Exception as e:
         print(e)

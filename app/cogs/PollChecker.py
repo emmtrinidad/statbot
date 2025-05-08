@@ -1,8 +1,8 @@
 import discord
 from discord.ext import commands, tasks
-import app.db.stats as stats
-import app.utils as utils
-import app.db.init as init
+import db.stats as stats
+import utils as utils
+import db.init as init
 
 class PollChecker(commands.Cog):
     def __init__ (self, bot):
@@ -68,7 +68,13 @@ class PollChecker(commands.Cog):
 
     @tasks.loop(seconds=5.0)
     async def checkPolls(self):
-        print(self.activePolls)
+
+        if self.activePolls:
+            print(self.activePolls)
+
+        else:
+            print("no polls currently detected")
+
         expiredPolls = []
 
         # check every poll to see if expired
