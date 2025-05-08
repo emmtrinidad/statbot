@@ -1,7 +1,7 @@
 import discord
 from discord import app_commands
-import app.db.permissions as permissions
-from app.utils import is_server_owner
+import db.permissions as permissions
+from utils import is_server_owner
 
 @app_commands.command(name="edit-perms", description="edit permissions to modify stats")
 @app_commands.choices(users =[

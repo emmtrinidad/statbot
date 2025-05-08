@@ -3,7 +3,7 @@ from discord import app_commands
 from discord.ext import commands
 from dotenv import load_dotenv
 import os
-from .db import init, permissions
+from db import init, permissions
 
 load_dotenv()
 
@@ -84,7 +84,7 @@ def load_commands():
     from pathlib import Path
 
     # only get from db and commands folders - cog is already added upon initializing
-    directories = [("db", "app.db"), ("commands", "app.commands")]
+    directories = [("db", "db"), ("commands", "commands")]
 
     # check every file in db, commands folders for all .py files that aren't init, and add expored commands to command tree
     for folderName, modulePrefix in directories:

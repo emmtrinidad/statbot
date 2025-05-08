@@ -1,5 +1,5 @@
 import discord
-import app.db.permissions as permissions
+import db.permissions as permissions
 
 def showStatsString(result):
     

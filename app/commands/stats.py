@@ -1,9 +1,9 @@
 import discord
 from discord import app_commands
-import app.db.stats as stats
+import db.stats as stats
 import re
-import app.utils as utils
-import app.db.permissions as permissions
+import utils as utils
+import db.permissions as permissions
 
 def showStatsString(result):
     

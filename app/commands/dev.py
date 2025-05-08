@@ -1,7 +1,7 @@
 import discord
 from discord import app_commands
-from app.utils import is_dev
-import app.db.init as init
+from utils import is_dev
+import db.init as init
 
 # command used for shutting down bot's connection to mongo until i find a better way
 @app_commands.command(name="shutdown")
@@ -18,4 +18,3 @@ async def shutdown(interaction: discord.Interaction):
         await interaction.response.send_message("not authorized")
 
 __commands__ = [shutdown]
-

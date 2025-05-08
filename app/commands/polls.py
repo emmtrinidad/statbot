@@ -1,9 +1,9 @@
 import discord
 from discord import app_commands
 from datetime import datetime, timedelta
-import app.db.stats as stats
-import app.utils as utils
-import app.db.permissions as permissions
+import db.stats as stats
+import utils as utils
+import db.permissions as permissions
 import re
 
 class Poll:
